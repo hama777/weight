@@ -8,7 +8,7 @@ import datetime
 import subprocess
 from ftplib import FTP_TLS
 
-version = "1.01"
+version = "1.02"
 appdir = os.path.dirname(os.path.abspath(__file__))
 
 templatefile = appdir + "./wei_templ.htm"
@@ -242,13 +242,6 @@ def read_data() :
     df = df.dropna()
     df['wdate'] = pd.to_datetime(df['wdate'])
 
-def month_graph() :
-    df_mon = df.tail(30)
-    for index, row in df_mon.iterrows():
-        dt = row['wdate']
-
-        out.write(f"['{dt.month}/{dt.day}',{row['weight']}],") 
-
 #  体重グラフ(90日)
 def month3_graph() :
     df_mon = df.tail(90)
@@ -326,9 +319,6 @@ def parse_template() :
     for line in f :
         if "%summary" in line :
             summary()
-            continue
-        if "%month_graph" in line :
-            month_graph()
             continue
         if "%month3_graph" in line :
             month3_graph()
