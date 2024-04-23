@@ -1,33 +1,12 @@
 <html><head><title>Walk List</title>
-    <!-- 23/12/06 -->
+    <!-- 24/04/23 -->
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta http-equiv="Content-Style-Type" content="text/css">
     <link rel="stylesheet" href="weight.css">
     </head>
     
     <script type="text/javascript" src="https://www.google.com/jsapi"></script>
-    <script type="text/javascript">
-        google.load("visualization", "1", {packages:["corechart"]});
-        google.setOnLoadCallback(
-            function() {
-                var data = google.visualization.arrayToDataTable([
-        [       '', '体重'],
-    %month_graph
-                ]);
-        
-                var options = {
-                    title: '体重',
-                    colors: ['green'] ,
-                    hAxis: {title: '月'},
-                    chartArea: { backgroundColor: '#f1f7f9' },
-                    backgroundColor: '#d8daf0'
-                };
-        
-                var chart = new google.visualization.LineChart(document.getElementById('month_graph'));
-                chart.draw(data, options);
-            }
-        );
-    </script>
+
     
     <script type="text/javascript">
         google.load("visualization", "1", {packages:["corechart"]});
@@ -42,8 +21,9 @@
                     title: '体重',
                     colors: ['#505deb'] ,
                     hAxis: {title: '月'},
-                    chartArea: { backgroundColor: '#f1f7f9' },
-                    backgroundColor: '#d8daf0'
+                    chartArea: { backgroundColor: '#f1f7f9' , left:80,right:30 },
+                    backgroundColor: '#d8daf0',
+                    legend: {  position: 'none'  }
                 };
         
                 var chart = new google.visualization.LineChart(document.getElementById('month3_graph'));
@@ -65,8 +45,9 @@
                 title: '体重',
                 colors: ['#505deb'] ,
                 hAxis: {title: '月'},
-                chartArea: { backgroundColor: '#f1f7f9' },
-                backgroundColor: '#d8daf0'
+                chartArea: { backgroundColor: '#f1f7f9' , left:80,right:30 },
+                backgroundColor: '#d8daf0',
+                legend: {  position: 'none'  }
             };
     
             var chart = new google.visualization.LineChart(document.getElementById('mvave_graph'));
@@ -88,8 +69,9 @@
                 title: '体重',
                 colors: ['#505deb'] ,
                 hAxis: {title: '月'},
-                chartArea: { backgroundColor: '#f1f7f9' },
-                backgroundColor: '#d8daf0'
+                chartArea: { backgroundColor: '#f1f7f9'  , left:80,right:30},
+                backgroundColor: '#d8daf0',
+                legend: {  position: 'none'  }
             };
     
             var chart = new google.visualization.LineChart(document.getElementById('month_ave_graph'));
