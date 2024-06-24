@@ -8,7 +8,8 @@ import datetime
 import subprocess
 from ftplib import FTP_TLS
 
-version = "1.02"
+version = "1.03"      #  24/06/24
+debug = 0
 appdir = os.path.dirname(os.path.abspath(__file__))
 
 templatefile = appdir + "./wei_templ.htm"
@@ -44,12 +45,14 @@ def main_proc():
     read_data()
     calc_statistics()
     parse_template()
+    if debug == 1 :
+        return
     result = subprocess.run((browser, resultfile))
 
 def read_config() :
-    global ftp_host,ftp_user,ftp_pass,ftp_url,datafile,browser,pixela_url,pixela_token
+    global ftp_host,ftp_user,ftp_pass,ftp_url,datafile,browser,pixela_url,pixela_token,debug
     if not os.path.isfile(conffile) :
-        print("ERROR not found configfile")
+        debug = 1 
         return
     conf = open(conffile,'r', encoding='utf-8')
     datafile = conf.readline().strip()
@@ -237,10 +240,13 @@ def month_ave_graph() :
 
 def read_data() :
     global df 
+    if debug == 1 :
+        datafile = appdir + "./体重debug.xls"
     df = pd.read_excel(datafile,sheet_name ='体重',usecols=[0, 1],
                        header = 1, names=["wdate", "weight",])  # 0,1 カラムのみ読み込み
     df = df.dropna()
     df['wdate'] = pd.to_datetime(df['wdate'])
+
 
 #  体重グラフ(90日)
 def month3_graph() :
