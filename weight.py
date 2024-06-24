@@ -8,7 +8,7 @@ import datetime
 import subprocess
 from ftplib import FTP_TLS
 
-version = "1.03"      #  24/06/24
+version = "1.04"      #  24/06/24
 debug = 0
 appdir = os.path.dirname(os.path.abspath(__file__))
 
@@ -239,7 +239,7 @@ def month_ave_graph() :
         out.write(f"['{yymm}',{m}],") 
 
 def read_data() :
-    global df 
+    global df , datafile
     if debug == 1 :
         datafile = appdir + "./体重debug.xls"
     df = pd.read_excel(datafile,sheet_name ='体重',usecols=[0, 1],
