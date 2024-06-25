@@ -8,13 +8,14 @@ import datetime
 import subprocess
 from ftplib import FTP_TLS
 
-version = "1.04"      #  24/06/24
+version = "1.05"      #  24/06/25
 debug = 0
 appdir = os.path.dirname(os.path.abspath(__file__))
 
 templatefile = appdir + "./wei_templ.htm"
 resultfile = appdir + "./weight.htm"
 conffile = appdir + "./weight.conf"
+datafile = appdir + "./体重debug.xls"     # debug用  本番用は confファイルで設定
 
 month_avarage_df = ""
 month_table_col = 0     # 月テーブルの列
@@ -239,9 +240,7 @@ def month_ave_graph() :
         out.write(f"['{yymm}',{m}],") 
 
 def read_data() :
-    global df , datafile
-    if debug == 1 :
-        datafile = appdir + "./体重debug.xls"
+    global df 
     df = pd.read_excel(datafile,sheet_name ='体重',usecols=[0, 1],
                        header = 1, names=["wdate", "weight",])  # 0,1 カラムのみ読み込み
     df = df.dropna()
