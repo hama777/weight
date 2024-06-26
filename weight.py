@@ -8,7 +8,7 @@ import datetime
 import subprocess
 from ftplib import FTP_TLS
 
-version = "1.05"      #  24/06/25
+version = "1.06"      #  24/06/26
 debug = 0
 appdir = os.path.dirname(os.path.abspath(__file__))
 
@@ -45,6 +45,7 @@ def main_proc():
     read_config()
     read_data()
     calc_statistics()
+    #month_ave_diff()
     parse_template()
     if debug == 1 :
         return
@@ -204,6 +205,26 @@ def month_table() :
         out.write(f'<tr><td align="right">{yymm}</td><td align="right">{mean_str}</td>'
                   f'<td align="right">{diff_str}</td><td align="right">{std_str}</td>'
                   f'<td>{max_str}</td><td>{min_str}</td></tr>')
+
+#   月の平均値の増減を計算し データフレーム  df_month_diff を作成する
+def month_ave_diff() :
+    diff = 0 
+    diff_list = []
+    yymm_list = []
+    n = 0 
+    for _,wdata in df_monstat.iterrows():
+        n = n + 1 
+        if n == 1 :
+            prev = wdata['mean']
+            continue
+        diff_list.append(wdata['mean'] - prev) 
+        yymm_list.append(wdata['yymm'] - 200000)
+        prev = wdata['mean']
+    
+    tmp_list = list(zip(yymm_list, diff_list))
+    df_month_diff = pd.DataFrame(tmp_list,columns=["yymm","diff"])
+    print(df_month_diff)
+
 
 #   max min の場合はcssを設定する
 def set_css(s,cate,yymm) :
