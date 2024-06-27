@@ -8,7 +8,7 @@ import datetime
 import subprocess
 from ftplib import FTP_TLS
 
-version = "1.06"      #  24/06/26
+version = "1.07"      #  24/06/27
 debug = 0
 appdir = os.path.dirname(os.path.abspath(__file__))
 
@@ -45,6 +45,7 @@ def main_proc():
     read_config()
     read_data()
     calc_statistics()
+    create_month_ave_diff()
     #month_ave_diff()
     parse_template()
     if debug == 1 :
@@ -207,8 +208,8 @@ def month_table() :
                   f'<td>{max_str}</td><td>{min_str}</td></tr>')
 
 #   月の平均値の増減を計算し データフレーム  df_month_diff を作成する
-def month_ave_diff() :
-    diff = 0 
+def create_month_ave_diff() :
+    global df_month_diff
     diff_list = []
     yymm_list = []
     n = 0 
@@ -223,7 +224,24 @@ def month_ave_diff() :
     
     tmp_list = list(zip(yymm_list, diff_list))
     df_month_diff = pd.DataFrame(tmp_list,columns=["yymm","diff"])
-    print(df_month_diff)
+    #print(df_month_diff)
+
+def rank_month_ave_diff_high() : 
+    df_diff_sort = df_month_diff.sort_values('diff',ascending=False)
+    rank_month_ave_diff_com(df_diff_sort)
+
+def rank_month_ave_diff_low() : 
+    df_diff_sort = df_month_diff.sort_values('diff',ascending=True)
+    rank_month_ave_diff_com(df_diff_sort)
+
+def rank_month_ave_diff_com(df_sort) : 
+    n = 0 
+    for _,row in df_sort.iterrows(): 
+        n += 1
+        if n >= 11 :
+            break
+        out.write(f'<tr><td align="right">{n}</td><td align="right">{int(row["yymm"])}</td>'
+                  f'<td align="right">{row["diff"]:7.3f}</td>')
 
 
 #   max min の場合はcssを設定する
@@ -390,6 +408,12 @@ def parse_template() :
             continue
         if "%rank_month_average_high" in line :
             rank_month_average_high()
+            continue
+        if "%rank_month_ave_diff_high%" in line :
+            rank_month_ave_diff_high()
+            continue
+        if "%rank_month_ave_diff_low%" in line :
+            rank_month_ave_diff_low()
             continue
         if "%lastdate%" in line :
             lastdate_datetime = df['wdate'].iloc[-1]
