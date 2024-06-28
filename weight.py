@@ -8,7 +8,7 @@ import datetime
 import subprocess
 from ftplib import FTP_TLS
 
-version = "1.07"      #  24/06/27
+version = "1.08"      #  24/06/28
 debug = 0
 appdir = os.path.dirname(os.path.abspath(__file__))
 
@@ -212,24 +212,41 @@ def create_month_ave_diff() :
     global df_month_diff
     diff_list = []
     yymm_list = []
+    series_list = []
     n = 0 
+    series = 0    #  連続増加の数  減少の場合は マイナス値
     for _,wdata in df_monstat.iterrows():
         n = n + 1 
         if n == 1 :
             prev = wdata['mean']
             continue
-        diff_list.append(wdata['mean'] - prev) 
+        diff = wdata['mean'] - prev
+        if diff >= 0 :
+            if series < 0 :
+                series = 1
+            else :
+                series += 1
+        else :
+            if series > 0 :
+                series = -1
+            else :
+                series += -1
+            
+        diff_list.append(diff) 
         yymm_list.append(wdata['yymm'] - 200000)
+        series_list.append(series)
         prev = wdata['mean']
     
-    tmp_list = list(zip(yymm_list, diff_list))
-    df_month_diff = pd.DataFrame(tmp_list,columns=["yymm","diff"])
-    #print(df_month_diff)
+    tmp_list = list(zip(yymm_list, diff_list,series_list))
+    df_month_diff = pd.DataFrame(tmp_list,columns=["yymm","diff","series"])
+    print(df_month_diff)
 
+#   月平均増加ランキング
 def rank_month_ave_diff_high() : 
     df_diff_sort = df_month_diff.sort_values('diff',ascending=False)
     rank_month_ave_diff_com(df_diff_sort)
 
+#   月平均減少ランキング
 def rank_month_ave_diff_low() : 
     df_diff_sort = df_month_diff.sort_values('diff',ascending=True)
     rank_month_ave_diff_com(df_diff_sort)
@@ -242,6 +259,25 @@ def rank_month_ave_diff_com(df_sort) :
             break
         out.write(f'<tr><td align="right">{n}</td><td align="right">{int(row["yymm"])}</td>'
                   f'<td align="right">{row["diff"]:7.3f}</td>')
+
+#   月平均連続増加ランキング
+def rank_month_ave_series_high() :
+    df_diff_sort = df_month_diff.sort_values('series',ascending=False)
+    rank_month_ave_series_com(df_diff_sort)
+
+def rank_month_ave_series_low() :
+    df_diff_sort = df_month_diff.sort_values('series',ascending=True)
+    rank_month_ave_series_com(df_diff_sort)
+
+def rank_month_ave_series_com(df_sort) :
+    n = 0 
+    for _,row in df_sort.iterrows(): 
+        n += 1
+        if n >= 11 :
+            break
+        i = abs(int(row["series"]))
+        out.write(f'<tr><td align="right">{n}</td><td align="right">{int(row["yymm"])}</td>'
+                  f'<td align="right">{i}</td>')
 
 
 #   max min の場合はcssを設定する
@@ -414,6 +450,12 @@ def parse_template() :
             continue
         if "%rank_month_ave_diff_low%" in line :
             rank_month_ave_diff_low()
+            continue
+        if "%rank_month_ave_series_high%" in line :
+            rank_month_ave_series_high()
+            continue
+        if "%rank_month_ave_series_low%" in line :
+            rank_month_ave_series_low()
             continue
         if "%lastdate%" in line :
             lastdate_datetime = df['wdate'].iloc[-1]
