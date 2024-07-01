@@ -8,7 +8,7 @@ import datetime
 import subprocess
 from ftplib import FTP_TLS
 
-version = "1.08"      #  24/06/28
+version = "1.09"      #  24/07/01
 debug = 0
 appdir = os.path.dirname(os.path.abspath(__file__))
 
@@ -47,6 +47,7 @@ def main_proc():
     calc_statistics()
     create_month_ave_diff()
     #month_ave_diff()
+    create_day_diff()
     parse_template()
     if debug == 1 :
         return
@@ -239,7 +240,7 @@ def create_month_ave_diff() :
     
     tmp_list = list(zip(yymm_list, diff_list,series_list))
     df_month_diff = pd.DataFrame(tmp_list,columns=["yymm","diff","series"])
-    print(df_month_diff)
+    #print(df_month_diff)
 
 #   月平均増加ランキング
 def rank_month_ave_diff_high() : 
@@ -279,6 +280,40 @@ def rank_month_ave_series_com(df_sort) :
         out.write(f'<tr><td align="right">{n}</td><td align="right">{int(row["yymm"])}</td>'
                   f'<td align="right">{i}</td>')
 
+#   日ごとの平均値の増減を計算し データフレーム  df_day_diff を作成する
+def create_day_diff() :
+    global df_day_diff
+    diff_list = []
+    date_list = []
+    series_list = []
+    n = 0 
+    series = 0    #  連続増加の数  減少の場合は マイナス値
+    for _,wdata in df.iterrows():
+        n = n + 1 
+        if n == 1 :
+            prev = wdata['weight']
+            continue
+        diff = wdata['weight'] - prev
+        if diff >= 0 :
+            if series < 0 :
+                series = 1
+            else :
+                series += 1
+        else :
+            if series > 0 :
+                series = -1
+            else :
+                series += -1
+            
+        diff_list.append(diff) 
+        date_list.append(wdata['wdate'] )
+        series_list.append(series)
+        prev = wdata['weight']
+
+    tmp_list = list(zip(date_list, diff_list,series_list))
+    df_day_diff = pd.DataFrame(tmp_list,columns=["wdate","diff","series"])
+
+    print(df_day_diff)
 
 #   max min の場合はcssを設定する
 def set_css(s,cate,yymm) :
