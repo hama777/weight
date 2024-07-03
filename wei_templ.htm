@@ -1,5 +1,5 @@
 <html><head><title>Walk List</title>
-    <!-- 24/06/28 -->
+    <!-- 24/07/03 -->
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta http-equiv="Content-Style-Type" content="text/css">
     <link rel="stylesheet" href="weight.css">
@@ -214,15 +214,36 @@
         <div class='frame'>
             <table class="rank">
                 <span style="margin-left: 30px;">連続増加</span>
-                <tr><th>順位</th><th>年月</th><th>体重</th></tr>
+                <tr><th>順位</th><th>年月</th><th>月数</th></tr>
                 %rank_month_ave_series_high%
             </table>
         </div>
         <div class='frame'>
             <table class="rank">
                 <span style="margin-left: 30px;">連続減少</span>
-                <tr><th>順位</th><th>年月</th><th>体重</th></tr>
+                <tr><th>順位</th><th>年月</th><th>月数</th></tr>
                 %rank_month_ave_series_low%
+            </table>
+        </div>
+        <div class='frame'>
+            <table class="rank">
+                <span style="margin-left: 30px;">日増加</span>
+                <tr><th>順位</th><th>年月</th><th>増加</th></tr>
+                %rank_day_diff_high%
+            </table>
+        </div>
+        <div class='frame'>
+            <table class="rank">
+                <span style="margin-left: 30px;">日減少</span>
+                <tr><th>順位</th><th>年月</th><th>減少</th></tr>
+                %rank_day_diff_low%
+            </table>
+        </div>
+        <div class='frame'>
+            <table class="rank">
+                <span style="margin-left: 30px;">日連続増加</span>
+                <tr><th>順位</th><th>年月</th><th>日数</th></tr>
+                %rank_day_series_high%
             </table>
         </div>
     </div>
