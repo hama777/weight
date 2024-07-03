@@ -8,7 +8,7 @@ import datetime
 import subprocess
 from ftplib import FTP_TLS
 
-version = "1.09"      #  24/07/01
+version = "1.11"      #  24/07/03
 debug = 0
 appdir = os.path.dirname(os.path.abspath(__file__))
 
@@ -280,7 +280,7 @@ def rank_month_ave_series_com(df_sort) :
         out.write(f'<tr><td align="right">{n}</td><td align="right">{int(row["yymm"])}</td>'
                   f'<td align="right">{i}</td>')
 
-#   日ごとの平均値の増減を計算し データフレーム  df_day_diff を作成する
+#   日ごとの増減を計算し データフレーム  df_day_diff を作成する
 def create_day_diff() :
     global df_day_diff
     diff_list = []
@@ -313,7 +313,40 @@ def create_day_diff() :
     tmp_list = list(zip(date_list, diff_list,series_list))
     df_day_diff = pd.DataFrame(tmp_list,columns=["wdate","diff","series"])
 
-    print(df_day_diff)
+    #print(df_day_diff)
+
+#  日ごとの増減ランキング
+def rank_day_diff_high() :
+    df_diff_sort = df_day_diff.sort_values('diff',ascending=False)
+    rank_day_diff_com(df_diff_sort)
+
+def rank_day_diff_low() :
+    df_diff_sort = df_day_diff.sort_values('diff',ascending=True)
+    rank_day_diff_com(df_diff_sort)
+
+def rank_day_diff_com(df_sort) :
+    n = 0 
+    for _,row in df_sort.iterrows(): 
+        n += 1
+        if n >= 11 :
+            break
+        date_str = row["wdate"].strftime("%y/%m/%d")
+        out.write(f'<tr><td align="right">{n}</td><td align="right">{date_str}</td>'
+                  f'<td align="right">{row["diff"]:7.1f}</td>')
+
+def rank_day_series_high() :
+    df_diff_sort = df_day_diff.sort_values('series',ascending=False)
+    rank_day_series_com(df_diff_sort)
+
+def rank_day_series_com(df_sort) :
+    n = 0 
+    df_sort = df_sort.head(10)
+    for _,row in df_sort.iterrows(): 
+        n += 1
+        i = abs(int(row["series"]))
+        date_str = row["wdate"].strftime("%y/%m/%d")
+        out.write(f'<tr><td align="right">{n}</td><td align="right">{date_str}</td>'
+                  f'<td align="right">{i}</td>')
 
 #   max min の場合はcssを設定する
 def set_css(s,cate,yymm) :
@@ -491,6 +524,15 @@ def parse_template() :
             continue
         if "%rank_month_ave_series_low%" in line :
             rank_month_ave_series_low()
+            continue
+        if "%rank_day_diff_high%" in line :
+            rank_day_diff_high()
+            continue
+        if "%rank_day_diff_low%" in line :
+            rank_day_diff_low()
+            continue
+        if "%rank_day_series_high%" in line :
+            rank_day_series_high()
             continue
         if "%lastdate%" in line :
             lastdate_datetime = df['wdate'].iloc[-1]
