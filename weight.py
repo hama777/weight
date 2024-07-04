@@ -8,7 +8,7 @@ import datetime
 import subprocess
 from ftplib import FTP_TLS
 
-version = "1.11"      #  24/07/03
+version = "1.12"      #  24/07/04
 debug = 0
 appdir = os.path.dirname(os.path.abspath(__file__))
 
@@ -326,16 +326,19 @@ def rank_day_diff_low() :
 
 def rank_day_diff_com(df_sort) :
     n = 0 
+    df_sort = df_sort.head(10)
     for _,row in df_sort.iterrows(): 
         n += 1
-        if n >= 11 :
-            break
         date_str = row["wdate"].strftime("%y/%m/%d")
         out.write(f'<tr><td align="right">{n}</td><td align="right">{date_str}</td>'
                   f'<td align="right">{row["diff"]:7.1f}</td>')
 
 def rank_day_series_high() :
     df_diff_sort = df_day_diff.sort_values('series',ascending=False)
+    rank_day_series_com(df_diff_sort)
+
+def rank_day_series_low() :
+    df_diff_sort = df_day_diff.sort_values('series',ascending=True)
     rank_day_series_com(df_diff_sort)
 
 def rank_day_series_com(df_sort) :
@@ -533,6 +536,9 @@ def parse_template() :
             continue
         if "%rank_day_series_high%" in line :
             rank_day_series_high()
+            continue
+        if "%rank_day_series_low%" in line :
+            rank_day_series_low()
             continue
         if "%lastdate%" in line :
             lastdate_datetime = df['wdate'].iloc[-1]
