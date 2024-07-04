@@ -1,5 +1,5 @@
 <html><head><title>Walk List</title>
-    <!-- 24/07/03 -->
+    <!-- 24/07/04 -->
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta http-equiv="Content-Style-Type" content="text/css">
     <link rel="stylesheet" href="weight.css">
@@ -104,20 +104,6 @@
     <h2>最高ランキング</h2>
     <div class="flex">
         <div class='frame'>
-            <span style="margin-left: 30px;">月間最高</span>
-            <table class="rank">
-            <tr><th>順位</th><th>体重</th><th>日付</th></tr>
-            %rank_month_top
-            </table>
-        </div>
-        <div class='frame'>
-            <span style="margin-left: 30px;">年間最高</span>
-            <table class="rank">
-            <tr><th>順位</th><th>体重</th><th>日付</th></tr>
-            %rank_year_top
-            </table>
-        </div>
-        <div class='frame'>
             <span style="margin-left: 30px;">全期間最高1</span>
             <table class="rank">
             <tr><th>順位</th><th>体重</th><th>日付</th></tr>
@@ -131,24 +117,24 @@
             %rank_all_top2
             </table>
         </div>
+        <div class='frame'>
+            <span style="margin-left: 30px;">年間最高</span>
+            <table class="rank">
+            <tr><th>順位</th><th>体重</th><th>日付</th></tr>
+            %rank_year_top
+            </table>
+        </div>
+        <div class='frame'>
+            <span style="margin-left: 30px;">月間最高</span>
+            <table class="rank">
+            <tr><th>順位</th><th>体重</th><th>日付</th></tr>
+            %rank_month_top
+            </table>
+        </div>
     </div>
     <br>
     <h2>最低ランキング</h2>
     <div class="flex">
-        <div class='frame'>
-            <span style="margin-left: 30px;">月間最低</span>
-            <table class="rank">
-            <tr><th>順位</th><th>体重</th><th>日付</th></tr>
-            %rank_month_bottom
-            </table>
-        </div>
-        <div class='frame'>
-            <span style="margin-left: 30px;">年間最低</span>
-            <table class="rank">
-            <tr><th>順位</th><th>体重</th><th>日付</th></tr>
-            %rank_year_bottom
-            </table>
-        </div>
         <div class='frame'>
             <span style="margin-left: 30px;">全期間最低1</span>
             <table class="rank">
@@ -161,6 +147,20 @@
             <table class="rank">
             <tr><th>順位</th><th>体重</th><th>日付</th></tr>
             %rank_all_bottom2
+            </table>
+        </div>
+        <div class='frame'>
+            <span style="margin-left: 30px;">年間最低</span>
+            <table class="rank">
+            <tr><th>順位</th><th>体重</th><th>日付</th></tr>
+            %rank_year_bottom
+            </table>
+        </div>
+        <div class='frame'>
+            <span style="margin-left: 30px;">月間最低</span>
+            <table class="rank">
+            <tr><th>順位</th><th>体重</th><th>日付</th></tr>
+            %rank_month_bottom
             </table>
         </div>
     </div>
@@ -195,7 +195,7 @@
             </table>
         </div>
     </div>
-    <h2>増減ランキング</h2>
+    <h2>月増減ランキング</h2>
     <div class="flex">
         <div class='frame'>
             <table class="rank">
@@ -225,6 +225,10 @@
                 %rank_month_ave_series_low%
             </table>
         </div>
+    </div>
+
+    <h2>日増減ランキング</h2>
+    <div class="flex">
         <div class='frame'>
             <table class="rank">
                 <span style="margin-left: 30px;">日増加</span>
@@ -244,6 +248,13 @@
                 <span style="margin-left: 30px;">日連続増加</span>
                 <tr><th>順位</th><th>年月</th><th>日数</th></tr>
                 %rank_day_series_high%
+            </table>
+        </div>
+        <div class='frame'>
+            <table class="rank">
+                <span style="margin-left: 30px;">日連続減少</span>
+                <tr><th>順位</th><th>年月</th><th>日数</th></tr>
+                %rank_day_series_low%
             </table>
         </div>
     </div>
