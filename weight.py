@@ -8,7 +8,7 @@ import datetime
 import subprocess
 from ftplib import FTP_TLS
 
-version = "1.12"      #  24/07/04
+version = "1.13"      #  24/08/03
 debug = 0
 appdir = os.path.dirname(os.path.abspath(__file__))
 
@@ -99,7 +99,9 @@ def calc_statistics() :
             tmp_list = []
             tmp_list.append(yy*100+mm)
             tmp_list.append(m)
-            tmp_list.append(dfmm.median()['weight'])
+            #tmp_list.append(dfmm.median()['weight'])
+            # データが1個の時、median を取得するとエラーになる。medianは未使用なのでダミーを入れる
+            tmp_list.append(0)
             tmp_list.append(dfmm.std()['weight'])
             tmp_list.append(dfmm.max()['weight'])
             tmp_list.append(dfmm.min()['weight'])
