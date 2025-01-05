@@ -8,7 +8,8 @@ import datetime
 import subprocess
 from ftplib import FTP_TLS
 
-version = "1.13"      #  24/08/03
+# 25/01/05 v1.14  年対応
+version = "1.14" 
 debug = 0
 appdir = os.path.dirname(os.path.abspath(__file__))
 
@@ -42,6 +43,7 @@ def main_proc():
     current_month = now.month
     current_yymm = current_year * 100 + current_month - 200000   # yymm の形式にする
 
+    date_settings()
     read_config()
     read_data()
     calc_statistics()
@@ -75,7 +77,7 @@ def calc_statistics() :
     column_names = ['yymm', 'mean', 'median','std','max','min']
     df_monstat = pd.DataFrame(columns=column_names)
     df_yearstat = pd.DataFrame(columns=column_names)
-    for yy in range(2010, 2025) : 
+    for yy in range(2010, today_yy+1) : 
         dfyy = df[df['wdate'].dt.year == yy]
         m = dfyy.mean()['weight']
         if pd.isna(m):
@@ -460,8 +462,17 @@ def rank_common(rankdf,flg_ascending,half):
         out.write(f'<tr><td align="right">{i}</td><td align="right">{row["weight"]}</td>'
                   f'<td>{date_color}</td></tr>')
 
+def date_settings():
+    global  today_date,today_mm,today_dd,today_yy,lastdate,today_datetime
+    today_datetime = datetime.datetime.today()
+    today_date = datetime.date.today()
+    today_mm = today_date.month
+    today_dd = today_date.day
+    today_yy = today_date.year
+    #lastdate = today_date - timedelta(days=1)
+
 def today(s):
-    d = datetime.datetime.today().strftime("%m/%d %H:%M")
+    d = today_datetime.strftime("%m/%d %H:%M")
     s = s.replace("%today%",d)
     out.write(s)
 
