@@ -8,21 +8,21 @@ import datetime
 import subprocess
 from ftplib import FTP_TLS
 
-# 25/01/05 v1.14  年対応
-version = "1.14" 
+# 25/01/06 v1.15  日付の処理をまとめた
+version = "1.15" 
 debug = 0
 appdir = os.path.dirname(os.path.abspath(__file__))
 
 templatefile = appdir + "./wei_templ.htm"
 resultfile = appdir + "./weight.htm"
 conffile = appdir + "./weight.conf"
-datafile = appdir + "./体重debug.xls"     # debug用  本番用は confファイルで設定
+datafile = appdir + "./体重.xls"     # debug用  本番用は confファイルで設定
 
 month_avarage_df = ""
 month_table_col = 0     # 月テーブルの列
 prev_diff = -1 
 rank_month_average_count = 0
-current_yymm = 0
+#current_yymm = 0
 
 #  maxmin
 #  最大最小値のデータ  辞書型  key  mean,std,max,min  value  辞書型 key max,min,maxyymm,minyymm
@@ -38,10 +38,10 @@ def main_proc():
     global current_yymm
 
     locale.setlocale(locale.LC_TIME, '')
-    now = datetime.datetime.now()
-    current_year = now.year
-    current_month = now.month
-    current_yymm = current_year * 100 + current_month - 200000   # yymm の形式にする
+    #now = datetime.datetime.now()
+    #current_year = now.year
+    #current_month = now.month
+    #current_yymm = current_year * 100 + current_month - 200000   # yymm の形式にする
 
     date_settings()
     read_config()
@@ -170,7 +170,7 @@ def rank_month_average_com(df_rank) :
         yymm = row["yymm"] - 200000
         str_yymm = yymm 
         str_mean = f'{row["mean"]:7.2f}'
-        if yymm == current_yymm :
+        if yymm == today_yymm :
             str_yymm = f'<span class=red>{str_yymm}</span>'
             str_mean = f'<span class=red>{str_mean}</span>'
 
@@ -463,12 +463,14 @@ def rank_common(rankdf,flg_ascending,half):
                   f'<td>{date_color}</td></tr>')
 
 def date_settings():
-    global  today_date,today_mm,today_dd,today_yy,lastdate,today_datetime
+    global  today_date,today_mm,today_dd,today_yy,lastdate,today_datetime,today_yymm
     today_datetime = datetime.datetime.today()
     today_date = datetime.date.today()
     today_mm = today_date.month
     today_dd = today_date.day
     today_yy = today_date.year
+    today_yymm = (today_yy - 2000)  * 100 + today_mm  # yymm の形式にする
+    #print(today_yymm)
     #lastdate = today_date - timedelta(days=1)
 
 def today(s):
