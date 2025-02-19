@@ -8,8 +8,8 @@ import datetime
 import subprocess
 from ftplib import FTP_TLS
 
-# 25/01/06 v1.15  日付の処理をまとめた
-version = "1.15" 
+# 25/02/19 v1.16  増減ランキングで今月を赤字にした
+version = "1.16" 
 debug = 0
 appdir = os.path.dirname(os.path.abspath(__file__))
 
@@ -262,7 +262,12 @@ def rank_month_ave_diff_com(df_sort) :
         n += 1
         if n >= 11 :
             break
-        out.write(f'<tr><td align="right">{n}</td><td align="right">{int(row["yymm"])}</td>'
+        yymm = int(row["yymm"])
+        str_yymm = yymm
+        print(yymm)
+        if yymm == today_yymm  :
+            str_yymm =  f'<span class=red>{yymm}</span>'
+        out.write(f'<tr><td align="right">{n}</td><td align="right">{str_yymm}</td>'
                   f'<td align="right">{row["diff"]:7.3f}</td>')
 
 #   月平均連続増加ランキング
