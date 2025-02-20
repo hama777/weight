@@ -8,8 +8,8 @@ import datetime
 import subprocess
 from ftplib import FTP_TLS
 
-# 25/02/19 v1.16  増減ランキングで今月を赤字にした
-version = "1.16" 
+# 25/02/20 v1.17 微修正
+version = "1.17" 
 debug = 0
 appdir = os.path.dirname(os.path.abspath(__file__))
 
@@ -22,7 +22,6 @@ month_avarage_df = ""
 month_table_col = 0     # 月テーブルの列
 prev_diff = -1 
 rank_month_average_count = 0
-#current_yymm = 0
 
 #  maxmin
 #  最大最小値のデータ  辞書型  key  mean,std,max,min  value  辞書型 key max,min,maxyymm,minyymm
@@ -38,17 +37,11 @@ def main_proc():
     global current_yymm
 
     locale.setlocale(locale.LC_TIME, '')
-    #now = datetime.datetime.now()
-    #current_year = now.year
-    #current_month = now.month
-    #current_yymm = current_year * 100 + current_month - 200000   # yymm の形式にする
-
     date_settings()
     read_config()
     read_data()
     calc_statistics()
     create_month_ave_diff()
-    #month_ave_diff()
     create_day_diff()
     parse_template()
     if debug == 1 :
@@ -244,7 +237,6 @@ def create_month_ave_diff() :
     
     tmp_list = list(zip(yymm_list, diff_list,series_list))
     df_month_diff = pd.DataFrame(tmp_list,columns=["yymm","diff","series"])
-    #print(df_month_diff)
 
 #   月平均増加ランキング
 def rank_month_ave_diff_high() : 
@@ -264,7 +256,6 @@ def rank_month_ave_diff_com(df_sort) :
             break
         yymm = int(row["yymm"])
         str_yymm = yymm
-        print(yymm)
         if yymm == today_yymm  :
             str_yymm =  f'<span class=red>{yymm}</span>'
         out.write(f'<tr><td align="right">{n}</td><td align="right">{str_yymm}</td>'
@@ -321,8 +312,6 @@ def create_day_diff() :
 
     tmp_list = list(zip(date_list, diff_list,series_list))
     df_day_diff = pd.DataFrame(tmp_list,columns=["wdate","diff","series"])
-
-    #print(df_day_diff)
 
 #  日ごとの増減ランキング
 def rank_day_diff_high() :
@@ -417,7 +406,6 @@ def mvave_graph() :
     df_yy = df.tail(priod+mov_ave_dd)
     df_yy['weight'] = df_yy['weight'].rolling(mov_ave_dd).mean()
     df_yy = df_yy.tail(priod)
-    #print(df_yy)
     for index,row  in df_yy.iterrows() :
         dt = row["wdate"]
         out.write(f"['{dt.month}/{dt.day}',{row['weight']:5.2f}],") 
@@ -475,8 +463,6 @@ def date_settings():
     today_dd = today_date.day
     today_yy = today_date.year
     today_yymm = (today_yy - 2000)  * 100 + today_mm  # yymm の形式にする
-    #print(today_yymm)
-    #lastdate = today_date - timedelta(days=1)
 
 def today(s):
     d = today_datetime.strftime("%m/%d %H:%M")
@@ -563,10 +549,11 @@ def parse_template() :
         if "%lastdate%" in line :
             lastdate_datetime = df['wdate'].iloc[-1]
             lastdate = lastdate_datetime.strftime('%y/%m/%d')
-            prev_day = lastdate_datetime - datetime.timedelta(days=1)
-            prev_day = prev_day.strftime('%y/%m/%d')
             line = line.replace("%lastdate%",lastdate)
             out.write(line)
+            #  prev_day で rank_com 等で使用
+            prev_day = lastdate_datetime - datetime.timedelta(days=1)
+            prev_day = prev_day.strftime('%y/%m/%d')
             continue
         if "%version%" in line :
             s = line.replace("%version%",version)
