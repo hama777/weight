@@ -8,8 +8,8 @@ import datetime
 import subprocess
 from ftplib import FTP_TLS
 
-# 25/02/20 v1.17 微修正
-version = "1.17" 
+# 26/01/05 v1.18 月別情報を18年分に拡張
+version = "1.18" 
 debug = 0
 appdir = os.path.dirname(os.path.abspath(__file__))
 
@@ -176,7 +176,7 @@ def rank_month_average_com(df_rank) :
 def month_table() :
     global month_table_col,prev_diff
     month_table_col = month_table_col + 1   # 現在のカラム
-    num_col = 12 * 4    #  1カラムの月数
+    num_col = int(12 * 4.5)    #  1カラムの月数   1カラムに4年半 の月を表示
     start = (month_table_col -1 ) * num_col + 1 
     end = month_table_col * num_col
 
