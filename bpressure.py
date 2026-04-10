@@ -1,0 +1,576 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+import os
+import locale
+import pandas as pd
+import datetime 
+import subprocess
+from ftplib import FTP_TLS
+
+# 26/04/10 v0.00 データの読み込み処理
+version = "0.00" 
+debug = 0
+appdir = os.path.dirname(os.path.abspath(__file__))
+
+templatefile = appdir + "./press_templ.htm"
+resultfile = appdir + "./press.htm"
+conffile = appdir + "./weight.conf"
+datafile = appdir + "./体重.xls"     # debug用  本番用は confファイルで設定
+
+month_avarage_df = ""
+month_table_col = 0     # 月テーブルの列
+prev_diff = -1 
+rank_month_average_count = 0
+
+#  maxmin
+#  最大最小値のデータ  辞書型  key  mean,std,max,min  value  辞書型 key max,min,maxyymm,minyymm
+#  maxmin_data   mean  max 最大値
+#                      min 最小値
+#                      maxyymm  最大値のyymm
+#                      minyymm  最小値
+#                std   max 最大値   ..... 
+maxmin = {}     # 
+key_list = ["mean","std","max","min"]
+
+def main_proc():
+    global current_yymm
+
+    locale.setlocale(locale.LC_TIME, '')
+    date_settings()
+    read_config()
+    read_data()
+    return
+    calc_statistics()
+    create_month_ave_diff()
+    create_day_diff()
+    parse_template()
+    if debug == 1 :
+        return
+    result = subprocess.run((browser, resultfile))
+
+def read_config() :
+    global ftp_host,ftp_user,ftp_pass,ftp_url,datafile,browser,pixela_url,pixela_token,debug
+    if not os.path.isfile(conffile) :
+        debug = 1 
+        return
+    conf = open(conffile,'r', encoding='utf-8')
+    datafile = conf.readline().strip()
+    browser = conf.readline().strip()
+    ftp_host = conf.readline().strip()
+    ftp_user = conf.readline().strip()
+    ftp_pass = conf.readline().strip()
+    ftp_url = conf.readline().strip()
+    #pixela_url = conf.readline().strip()
+    #pixela_token = conf.readline().strip()
+    conf.close()
+
+def read_data() :
+    global df_pressure
+    df_pressure = pd.read_excel(datafile,sheet_name ='血圧',usecols=range(5),
+                       header = 1, names=["pdate", "m_high","m_low","e_high","e_low",])  # 0,1 カラムのみ読み込み
+    df_pressure = df_pressure.dropna()
+    df_pressure['pdate'] = pd.to_datetime(df_pressure['pdate'])
+    print(df_pressure)
+
+
+#  年、月ごとの統計量を求め df を作成する
+def calc_statistics() :
+    global df_monstat,df_yearstat
+    column_names = ['yymm', 'mean', 'median','std','max','min']
+    df_monstat = pd.DataFrame(columns=column_names)
+    df_yearstat = pd.DataFrame(columns=column_names)
+    for yy in range(2010, today_yy+1) : 
+        dfyy = df[df['wdate'].dt.year == yy]
+        m = dfyy.mean()['weight']
+        if pd.isna(m):
+            break
+
+        tmp_list = []
+        tmp_list.append(yy)
+        tmp_list.append(m)
+        tmp_list.append(dfyy.median()['weight'])
+        tmp_list.append(dfyy.std()['weight'])
+        tmp_list.append(dfyy.max()['weight'])
+        tmp_list.append(dfyy.min()['weight'])
+        tmp_df = pd.DataFrame([tmp_list],columns=column_names)
+        df_yearstat = pd.concat([df_yearstat, tmp_df])
+
+        for mm in range(1,13) :
+            dfmm = dfyy[dfyy['wdate'].dt.month == mm]
+            m = dfmm.mean()['weight']
+            if pd.isna(m):
+                break
+            tmp_list = []
+            tmp_list.append(yy*100+mm)
+            tmp_list.append(m)
+            #tmp_list.append(dfmm.median()['weight'])
+            # データが1個の時、median を取得するとエラーになる。medianは未使用なのでダミーを入れる
+            tmp_list.append(0)
+            tmp_list.append(dfmm.std()['weight'])
+            tmp_list.append(dfmm.max()['weight'])
+            tmp_list.append(dfmm.min()['weight'])
+            tmp_df = pd.DataFrame([tmp_list],columns=column_names)
+
+            df_monstat = pd.concat([df_monstat, tmp_df])
+            df_monstat.reset_index(drop=True,inplace=True)
+
+def summary() :
+    global maxmin
+    ave = df_monstat['mean'].iloc[-1]
+    prev_ave = df_monstat['mean'].iloc[-2]
+    std = df_monstat['std'].iloc[-1]
+    max = df_monstat['max'].iloc[-1]
+    prev_max = df_monstat['max'].iloc[-2]
+    min = df_monstat['min'].iloc[-1]
+    prev_min = df_monstat['min'].iloc[-2]
+    rank = int(df_monstat.rank()['mean'].iloc[-1])
+    count = len(df_monstat)
+
+    for k in key_list :
+        maxmin_data = {}
+        maxmin_data['max'] = df_monstat[k].max()
+        ix = df_monstat[k].idxmax()
+        maxmin_data['maxyymm']  = df_monstat['yymm'].loc[ix]  - 200000
+        maxmin_data['min']  = df_monstat[k].min()
+        ix = df_monstat[k].idxmin()
+        maxmin_data['minyymm'] = df_monstat['yymm'].loc[ix]  - 200000
+        maxmin[k] = maxmin_data
+
+    out.write(f'<tr><td>今月(前月差)</td><td>{ave:7.2f}({ave -prev_ave:.2f})</td><td>{rank}/{count}</td>'
+              f'<td>{std:7.3f}</td><td>{max}({max-prev_max:.1f}) </td><td>{min}({min-prev_min:.1f})</td></tr>')
+    out.write(f'<tr><td>最高(年月)</td><td>{maxmin["mean"]["max"]:7.2f}({maxmin["mean"]["maxyymm"]})</td><td>--</td>'
+              f'<td>{maxmin["std"]["max"]:7.3f}({maxmin["std"]["maxyymm"]})</td><td>{maxmin["max"]["max"]:.1f}({maxmin["max"]["maxyymm"]})</td>'
+              f'<td>{maxmin["min"]["max"]:.1f}({maxmin["min"]["maxyymm"]})</td></tr>')
+    out.write(f'<tr><td>最低(年月)</td><td>{maxmin["mean"]["min"]:7.2f}({maxmin["mean"]["minyymm"]})</td><td>--</td>'
+              f'<td>{maxmin["std"]["min"]:7.3f}({maxmin["std"]["minyymm"]})</td><td>{maxmin["max"]["min"]:.1f}({maxmin["max"]["minyymm"]})</td>'
+              f'<td>{maxmin["min"]["min"]:.1f}({maxmin["min"]["minyymm"]})</td></tr>')
+
+#  月平均ランキング  
+def rank_month_average_high() :
+    sorted_month_avarage_df  = df_monstat.sort_values('mean',ascending=False)
+    monrank = sorted_month_avarage_df.head(20)   
+    rank_month_average_com(monrank)
+
+def rank_month_average_low() :
+    sorted_month_avarage_df  = df_monstat.sort_values('mean',ascending=True)
+    monrank = sorted_month_avarage_df.head(20)   
+    rank_month_average_com(monrank)
+
+#  月平均ランキング  共通
+def rank_month_average_com(df_rank) :
+    global rank_month_average_count
+    rank_month_average_count = rank_month_average_count + 1  
+    i = 0
+    for index, row in df_rank.iterrows():
+        i = i+1 
+        if rank_month_average_count == 1 :
+            if i > 10 :
+                break
+        if rank_month_average_count == 2 :
+            if i <= 10 :
+                continue
+        yymm = row["yymm"] - 200000
+        str_yymm = yymm 
+        str_mean = f'{row["mean"]:7.2f}'
+        if yymm == today_yymm :
+            str_yymm = f'<span class=red>{str_yymm}</span>'
+            str_mean = f'<span class=red>{str_mean}</span>'
+
+        out.write(f'<tr><td align="right">{i}</td><td align="right">{str_yymm}</td>'
+                  f'<td>{str_mean}</td></tr>')
+    if rank_month_average_count == 2 :
+        rank_month_average_count = 0
+
+#  月別情報
+def month_table() :
+    global month_table_col,prev_diff
+    month_table_col = month_table_col + 1   # 現在のカラム
+    num_col = int(12 * 4.5)    #  1カラムの月数   1カラムに4年半 の月を表示
+    start = (month_table_col -1 ) * num_col + 1 
+    end = month_table_col * num_col
+
+    n = 0 
+    for _,wdata in df_monstat.iterrows():
+        n = n + 1 
+        if n < start or n > end :
+            continue 
+        if prev_diff == -1 :
+            diff = 0 
+        else :
+            diff = wdata["mean"] - prev_diff 
+        if diff < 0 :
+            diff_str = f"<span class=red>{diff:7.2f}</span>"
+        else :
+            diff_str = f"{diff:7.2f}"
+        prev_diff = wdata['mean']
+        yymm = wdata['yymm'] - 200000
+
+        mean_str = set_css(f'{wdata["mean"]:7.2f}',"mean",yymm)
+        std_str = set_css(f'{wdata["std"]:7.3f}',"std",yymm)
+        max_str = set_css(f'{wdata["max"]:7.1f}',"max",yymm)
+        min_str = set_css(f'{wdata["min"]:7.1f}',"min",yymm)
+
+        out.write(f'<tr><td align="right">{yymm}</td><td align="right">{mean_str}</td>'
+                  f'<td align="right">{diff_str}</td><td align="right">{std_str}</td>'
+                  f'<td>{max_str}</td><td>{min_str}</td></tr>')
+
+#   月の平均値の増減を計算し データフレーム  df_month_diff を作成する
+def create_month_ave_diff() :
+    global df_month_diff
+    diff_list = []
+    yymm_list = []
+    series_list = []
+    n = 0 
+    series = 0    #  連続増加の数  減少の場合は マイナス値
+    for _,wdata in df_monstat.iterrows():
+        n = n + 1 
+        if n == 1 :
+            prev = wdata['mean']
+            continue
+        diff = wdata['mean'] - prev
+        if diff >= 0 :
+            if series < 0 :
+                series = 1
+            else :
+                series += 1
+        else :
+            if series > 0 :
+                series = -1
+            else :
+                series += -1
+            
+        diff_list.append(diff) 
+        yymm_list.append(wdata['yymm'] - 200000)
+        series_list.append(series)
+        prev = wdata['mean']
+    
+    tmp_list = list(zip(yymm_list, diff_list,series_list))
+    df_month_diff = pd.DataFrame(tmp_list,columns=["yymm","diff","series"])
+
+#   月平均増加ランキング
+def rank_month_ave_diff_high() : 
+    df_diff_sort = df_month_diff.sort_values('diff',ascending=False)
+    rank_month_ave_diff_com(df_diff_sort)
+
+#   月平均減少ランキング
+def rank_month_ave_diff_low() : 
+    df_diff_sort = df_month_diff.sort_values('diff',ascending=True)
+    rank_month_ave_diff_com(df_diff_sort)
+
+def rank_month_ave_diff_com(df_sort) : 
+    n = 0 
+    for _,row in df_sort.iterrows(): 
+        n += 1
+        if n >= 11 :
+            break
+        yymm = int(row["yymm"])
+        str_yymm = yymm
+        if yymm == today_yymm  :
+            str_yymm =  f'<span class=red>{yymm}</span>'
+        out.write(f'<tr><td align="right">{n}</td><td align="right">{str_yymm}</td>'
+                  f'<td align="right">{row["diff"]:7.3f}</td>')
+
+#   月平均連続増加ランキング
+def rank_month_ave_series_high() :
+    df_diff_sort = df_month_diff.sort_values('series',ascending=False)
+    rank_month_ave_series_com(df_diff_sort)
+
+def rank_month_ave_series_low() :
+    df_diff_sort = df_month_diff.sort_values('series',ascending=True)
+    rank_month_ave_series_com(df_diff_sort)
+
+def rank_month_ave_series_com(df_sort) :
+    n = 0 
+    for _,row in df_sort.iterrows(): 
+        n += 1
+        if n >= 11 :
+            break
+        i = abs(int(row["series"]))
+        out.write(f'<tr><td align="right">{n}</td><td align="right">{int(row["yymm"])}</td>'
+                  f'<td align="right">{i}</td>')
+
+#   日ごとの増減を計算し データフレーム  df_day_diff を作成する
+def create_day_diff() :
+    global df_day_diff
+    diff_list = []
+    date_list = []
+    series_list = []
+    n = 0 
+    series = 0    #  連続増加の数  減少の場合は マイナス値
+    for _,wdata in df.iterrows():
+        n = n + 1 
+        if n == 1 :
+            prev = wdata['weight']
+            continue
+        diff = wdata['weight'] - prev
+        if diff >= 0 :
+            if series < 0 :
+                series = 1
+            else :
+                series += 1
+        else :
+            if series > 0 :
+                series = -1
+            else :
+                series += -1
+            
+        diff_list.append(diff) 
+        date_list.append(wdata['wdate'] )
+        series_list.append(series)
+        prev = wdata['weight']
+
+    tmp_list = list(zip(date_list, diff_list,series_list))
+    df_day_diff = pd.DataFrame(tmp_list,columns=["wdate","diff","series"])
+
+#  日ごとの増減ランキング
+def rank_day_diff_high() :
+    df_diff_sort = df_day_diff.sort_values('diff',ascending=False)
+    rank_day_diff_com(df_diff_sort)
+
+def rank_day_diff_low() :
+    df_diff_sort = df_day_diff.sort_values('diff',ascending=True)
+    rank_day_diff_com(df_diff_sort)
+
+def rank_day_diff_com(df_sort) :
+    n = 0 
+    df_sort = df_sort.head(10)
+    for _,row in df_sort.iterrows(): 
+        n += 1
+        date_str = row["wdate"].strftime("%y/%m/%d")
+        out.write(f'<tr><td align="right">{n}</td><td align="right">{date_str}</td>'
+                  f'<td align="right">{row["diff"]:7.1f}</td>')
+
+def rank_day_series_high() :
+    df_diff_sort = df_day_diff.sort_values('series',ascending=False)
+    rank_day_series_com(df_diff_sort)
+
+def rank_day_series_low() :
+    df_diff_sort = df_day_diff.sort_values('series',ascending=True)
+    rank_day_series_com(df_diff_sort)
+
+def rank_day_series_com(df_sort) :
+    n = 0 
+    df_sort = df_sort.head(10)
+    for _,row in df_sort.iterrows(): 
+        n += 1
+        i = abs(int(row["series"]))
+        date_str = row["wdate"].strftime("%y/%m/%d")
+        out.write(f'<tr><td align="right">{n}</td><td align="right">{date_str}</td>'
+                  f'<td align="right">{i}</td>')
+
+#   max min の場合はcssを設定する
+def set_css(s,cate,yymm) :
+    target_str = s
+    if maxmin[cate]["maxyymm"] == yymm :
+        target_str = f'<span class=max>{s}</span>'
+    if maxmin[cate]["minyymm"] == yymm :
+        target_str = f'<span class=min>{s}</span>'
+    return target_str
+
+#  年別情報
+def year_table() :
+    prev = -1
+    for _,wdata in df_yearstat.iterrows(): 
+        if prev == -1 :
+            diff = 0 
+        else :
+            diff = wdata["mean"] - prev 
+        if diff < 0 :
+            diff_str = f"<span class=red>{diff:7.2f}</span>"
+        else :
+            diff_str = f"{diff:7.2f}"
+        prev = wdata['mean']
+        yy = wdata["yymm"]
+        out.write(f'<tr><td align="right">{yy}</td><td align="right">{wdata["mean"]:7.3f}</td>'
+                  f'<td align="right">{diff_str}</td><td align="right">{wdata["std"]:7.3f}</td>'
+                  f'<td>{wdata["max"]:7.1f}</td><td>{wdata["min"]:7.1f}</td></tr>')
+
+#  月別平均グラフ
+def month_ave_graph() :
+    for _,wdata in df_monstat.iterrows(): 
+        m = wdata['mean']
+        yymm = wdata['yymm'] - 200000   # 西暦を2桁表示にする
+        out.write(f"['{yymm}',{m}],") 
+
+
+
+#  体重グラフ(90日)
+def month3_graph() :
+    df_mon = df.tail(90)
+    for index, row in df_mon.iterrows():
+        dt = row['wdate']
+
+        out.write(f"['{dt.month}/{dt.day}',{row['weight']}],") 
+
+#  体重移動平均グラフ(1年)
+def mvave_graph() :
+    priod = 365
+    mov_ave_dd = 7 
+    df_yy = df.tail(priod+mov_ave_dd)
+    df_yy['weight'] = df_yy['weight'].rolling(mov_ave_dd).mean()
+    df_yy = df_yy.tail(priod)
+    for index,row  in df_yy.iterrows() :
+        dt = row["wdate"]
+        out.write(f"['{dt.month}/{dt.day}',{row['weight']:5.2f}],") 
+
+#  ランキング
+def rank_month_top() :
+    df_mon = df.tail(30)
+    rank_common(df_mon,False,1)
+
+def rank_year_top():
+    df_mon = df.tail(365)
+    rank_common(df_mon,False,1)
+
+def rank_all_top(half):
+    rank_common(df,False,half)
+
+def rank_month_bottom() :
+    df_mon = df.tail(30)
+    rank_common(df_mon,True,1)
+
+def rank_year_bottom() :
+    df_mon = df.tail(365)
+    rank_common(df_mon,True,1)
+
+def rank_all_bottom(half) :
+    rank_common(df,True,half)
+
+def rank_common(rankdf,flg_ascending,half):
+    sorted  = rankdf.sort_values('weight',ascending=flg_ascending)
+    if half == 1 :
+        monrank = sorted.head(10)   
+    else :
+        monrank = sorted.head(20)   
+
+    i = 0
+    for index, row in monrank.iterrows():
+        i = i+1 
+        if half == 2 :
+            if i <= 10 :
+                continue 
+        date_str = row["wdate"].strftime("%y/%m/%d")
+        date_color = row["wdate"].strftime("%y/%m/%d (%a)")
+        if date_str == lastdate :
+            date_color = f'<span class=red>{date_color}</span>'
+        if date_str == prev_day :
+            date_color = f'<span class=blue>{date_color}</span>'
+        out.write(f'<tr><td align="right">{i}</td><td align="right">{row["weight"]}</td>'
+                  f'<td>{date_color}</td></tr>')
+
+def date_settings():
+    global  today_date,today_mm,today_dd,today_yy,lastdate,today_datetime,today_yymm
+    today_datetime = datetime.datetime.today()
+    today_date = datetime.date.today()
+    today_mm = today_date.month
+    today_dd = today_date.day
+    today_yy = today_date.year
+    today_yymm = (today_yy - 2000)  * 100 + today_mm  # yymm の形式にする
+
+def today(s):
+    d = today_datetime.strftime("%m/%d %H:%M")
+    s = s.replace("%today%",d)
+    out.write(s)
+
+def parse_template() :
+    global out ,lastdate,prev_day
+    f = open(templatefile , 'r', encoding='utf-8')
+    out = open(resultfile,'w' ,  encoding='utf-8')
+    for line in f :
+        if "%summary" in line :
+            summary()
+            continue
+        if "%month3_graph" in line :
+            month3_graph()
+            continue
+        if "%mvave_graph" in line :
+            mvave_graph()
+            continue
+        if "%rank_month_top" in line :
+            rank_month_top()
+            continue
+        if "%rank_year_top" in line :
+            rank_year_top()
+            continue
+        if "%rank_all_top1" in line :
+            rank_all_top(1)
+            continue
+        if "%rank_all_top2" in line :
+            rank_all_top(2)
+            continue
+        if "%rank_month_bottom" in line :
+            rank_month_bottom()
+            continue
+        if "%rank_year_bottom" in line :
+            rank_year_bottom()
+            continue
+        if "%rank_all_bottom1" in line :
+            rank_all_bottom(1)
+            continue
+        if "%rank_all_bottom2" in line :
+            rank_all_bottom(2)
+            continue
+        if "%month_ave_graph" in line :
+            month_ave_graph()
+            continue
+        if "%year_table" in line :
+            year_table()
+            continue
+        if "%month_table" in line :
+            month_table()
+            continue
+        if "%rank_month_average_low" in line :
+            rank_month_average_low()
+            continue
+        if "%rank_month_average_high" in line :
+            rank_month_average_high()
+            continue
+        if "%rank_month_ave_diff_high%" in line :
+            rank_month_ave_diff_high()
+            continue
+        if "%rank_month_ave_diff_low%" in line :
+            rank_month_ave_diff_low()
+            continue
+        if "%rank_month_ave_series_high%" in line :
+            rank_month_ave_series_high()
+            continue
+        if "%rank_month_ave_series_low%" in line :
+            rank_month_ave_series_low()
+            continue
+        if "%rank_day_diff_high%" in line :
+            rank_day_diff_high()
+            continue
+        if "%rank_day_diff_low%" in line :
+            rank_day_diff_low()
+            continue
+        if "%rank_day_series_high%" in line :
+            rank_day_series_high()
+            continue
+        if "%rank_day_series_low%" in line :
+            rank_day_series_low()
+            continue
+        if "%lastdate%" in line :
+            lastdate_datetime = df['wdate'].iloc[-1]
+            lastdate = lastdate_datetime.strftime('%y/%m/%d')
+            line = line.replace("%lastdate%",lastdate)
+            out.write(line)
+            #  prev_day で rank_com 等で使用
+            prev_day = lastdate_datetime - datetime.timedelta(days=1)
+            prev_day = prev_day.strftime('%y/%m/%d')
+            continue
+        if "%version%" in line :
+            s = line.replace("%version%",version)
+            out.write(s)
+            continue
+        if "%today%" in line :
+            today(line)
+            continue
+
+        out.write(line)
+
+    f.close()
+    out.close()
+
+# ----------------------------------------------------------
+main_proc()
