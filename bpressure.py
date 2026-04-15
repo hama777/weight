@@ -8,8 +8,8 @@ import datetime
 import subprocess
 from ftplib import FTP_TLS
 
-# 26/04/10 v0.00 データの読み込み処理
-version = "0.00" 
+# 26/04/15 v0.01 血圧(高)のグラフ追加
+version = "0.01" 
 debug = 0
 appdir = os.path.dirname(os.path.abspath(__file__))
 
@@ -40,10 +40,9 @@ def main_proc():
     date_settings()
     read_config()
     read_data()
-    return
-    calc_statistics()
-    create_month_ave_diff()
-    create_day_diff()
+    #calc_statistics()
+    #create_month_ave_diff()
+    #create_day_diff()
     parse_template()
     if debug == 1 :
         return
@@ -71,7 +70,17 @@ def read_data() :
                        header = 1, names=["pdate", "m_high","m_low","e_high","e_low",])  # 0,1 カラムのみ読み込み
     df_pressure = df_pressure.dropna()
     df_pressure['pdate'] = pd.to_datetime(df_pressure['pdate'])
+    df_pressure["ave_high"] = (df_pressure["m_high"] + df_pressure["e_high"]) / 2
+    df_pressure["ave_low"]  = (df_pressure["m_low"]  + df_pressure["e_low"])  / 2
     print(df_pressure)
+
+def month3_graph() :
+    df_qu = df_pressure.tail(90)
+    for index, row in df_qu.iterrows():
+        dt = row['pdate']
+
+        out.write(f"['{dt.month}/{dt.day}',{row['ave_high']}],") 
+
 
 
 #  年、月ごとの統計量を求め df を作成する
@@ -396,12 +405,12 @@ def month_ave_graph() :
 
 
 #  体重グラフ(90日)
-def month3_graph() :
-    df_mon = df.tail(90)
-    for index, row in df_mon.iterrows():
-        dt = row['wdate']
+# def month3_graph() :
+#     df_mon = df.tail(90)
+#     for index, row in df_mon.iterrows():
+#         dt = row['wdate']
 
-        out.write(f"['{dt.month}/{dt.day}',{row['weight']}],") 
+#         out.write(f"['{dt.month}/{dt.day}',{row['weight']}],") 
 
 #  体重移動平均グラフ(1年)
 def mvave_graph() :
@@ -478,77 +487,8 @@ def parse_template() :
     f = open(templatefile , 'r', encoding='utf-8')
     out = open(resultfile,'w' ,  encoding='utf-8')
     for line in f :
-        if "%summary" in line :
-            summary()
-            continue
         if "%month3_graph" in line :
             month3_graph()
-            continue
-        if "%mvave_graph" in line :
-            mvave_graph()
-            continue
-        if "%rank_month_top" in line :
-            rank_month_top()
-            continue
-        if "%rank_year_top" in line :
-            rank_year_top()
-            continue
-        if "%rank_all_top1" in line :
-            rank_all_top(1)
-            continue
-        if "%rank_all_top2" in line :
-            rank_all_top(2)
-            continue
-        if "%rank_month_bottom" in line :
-            rank_month_bottom()
-            continue
-        if "%rank_year_bottom" in line :
-            rank_year_bottom()
-            continue
-        if "%rank_all_bottom1" in line :
-            rank_all_bottom(1)
-            continue
-        if "%rank_all_bottom2" in line :
-            rank_all_bottom(2)
-            continue
-        if "%month_ave_graph" in line :
-            month_ave_graph()
-            continue
-        if "%year_table" in line :
-            year_table()
-            continue
-        if "%month_table" in line :
-            month_table()
-            continue
-        if "%rank_month_average_low" in line :
-            rank_month_average_low()
-            continue
-        if "%rank_month_average_high" in line :
-            rank_month_average_high()
-            continue
-        if "%rank_month_ave_diff_high%" in line :
-            rank_month_ave_diff_high()
-            continue
-        if "%rank_month_ave_diff_low%" in line :
-            rank_month_ave_diff_low()
-            continue
-        if "%rank_month_ave_series_high%" in line :
-            rank_month_ave_series_high()
-            continue
-        if "%rank_month_ave_series_low%" in line :
-            rank_month_ave_series_low()
-            continue
-        if "%rank_day_diff_high%" in line :
-            rank_day_diff_high()
-            continue
-        if "%rank_day_diff_low%" in line :
-            rank_day_diff_low()
-            continue
-        if "%rank_day_series_high%" in line :
-            rank_day_series_high()
-            continue
-        if "%rank_day_series_low%" in line :
-            rank_day_series_low()
             continue
         if "%lastdate%" in line :
             lastdate_datetime = df['wdate'].iloc[-1]
