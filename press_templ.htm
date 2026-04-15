@@ -1,0 +1,91 @@
+<html><head><title>Walk List</title>
+    <!--26/04/15 v0.01 血圧(高)のグラフ追加 -->
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="Content-Style-Type" content="text/css">
+    <link rel="stylesheet" href="weight.css">
+    </head>
+    
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+
+    
+    <script type="text/javascript">
+        google.load("visualization", "1", {packages:["corechart"]});
+        google.setOnLoadCallback(
+            function() {
+                var data = google.visualization.arrayToDataTable([
+        [       '', '血圧'],
+    %month3_graph
+                ]);
+        
+                var options = {
+                    title: '血圧',
+                    colors: ['#505deb'] ,
+                    hAxis: {title: '月'},
+                    chartArea: { backgroundColor: '#f1f7f9' , left:80,right:30 },
+                    backgroundColor: '#d8daf0',
+                    legend: {  position: 'none'  }
+                };
+        
+                var chart = new google.visualization.LineChart(document.getElementById('month3_graph'));
+                chart.draw(data, options);
+            }
+        );
+    </script>
+
+<script type="text/javascript">
+    google.load("visualization", "1", {packages:["corechart"]});
+    google.setOnLoadCallback(
+        function() {
+            var data = google.visualization.arrayToDataTable([
+    [       '', '体重'],
+%mvave_graph
+            ]);
+    
+            var options = {
+                title: '体重',
+                colors: ['#505deb'] ,
+                hAxis: {title: '月'},
+                chartArea: { backgroundColor: '#f1f7f9' , left:80,right:30 },
+                backgroundColor: '#d8daf0',
+                legend: {  position: 'none'  }
+            };
+    
+            var chart = new google.visualization.LineChart(document.getElementById('mvave_graph'));
+            chart.draw(data, options);
+        }
+    );
+</script>
+
+<script type="text/javascript">
+    google.load("visualization", "1", {packages:["corechart"]});
+    google.setOnLoadCallback(
+        function() {
+            var data = google.visualization.arrayToDataTable([
+    [       '', '体重'],
+%month_ave_graph
+            ]);
+    
+            var options = {
+                title: '体重',
+                colors: ['#505deb'] ,
+                hAxis: {title: '月'},
+                chartArea: { backgroundColor: '#f1f7f9'  , left:80,right:30},
+                backgroundColor: '#d8daf0',
+                legend: {  position: 'none'  }
+            };
+    
+            var chart = new google.visualization.LineChart(document.getElementById('month_ave_graph'));
+            chart.draw(data, options);
+        }
+    );
+</script>
+
+    <h1>血圧集計</h1>
+    <span style="font-size:12px;">Ver : %version%</span>
+    <span style="font-size:12px;">実行日時   : %today%</span>
+
+    <h2>血圧グラフ(90日)</h2>
+    <div id="month3_graph" style="width:1000px; height:400px;  margin-top:20px ; margin-left:  50px; " ></div>
+    <br>
+</body>
+</html>
