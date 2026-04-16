@@ -1,5 +1,5 @@
 <html><head><title>Walk List</title>
-    <!--26/04/15 v0.01 血圧(高)のグラフ追加 -->
+    <!-- 26/04/16 v0.02 血圧の高と低を同じグラフに追加 -->
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta http-equiv="Content-Style-Type" content="text/css">
     <link rel="stylesheet" href="weight.css">
@@ -13,13 +13,13 @@
         google.setOnLoadCallback(
             function() {
                 var data = google.visualization.arrayToDataTable([
-        [       '', '血圧'],
+        [       '', '血圧高','血圧低'],
     %month3_graph
                 ]);
         
                 var options = {
                     title: '血圧',
-                    colors: ['#505deb'] ,
+                    colors: ['#505deb','#e24343'] ,
                     hAxis: {title: '月'},
                     chartArea: { backgroundColor: '#f1f7f9' , left:80,right:30 },
                     backgroundColor: '#d8daf0',
