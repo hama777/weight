@@ -8,8 +8,8 @@ import datetime
 import subprocess
 from ftplib import FTP_TLS
 
-# 26/04/15 v0.01 血圧(高)のグラフ追加
-version = "0.01" 
+# 26/04/16 v0.02 血圧の高と低を同じグラフに追加
+version = "0.02" 
 debug = 0
 appdir = os.path.dirname(os.path.abspath(__file__))
 
@@ -79,7 +79,7 @@ def month3_graph() :
     for index, row in df_qu.iterrows():
         dt = row['pdate']
 
-        out.write(f"['{dt.month}/{dt.day}',{row['ave_high']}],") 
+        out.write(f"['{dt.month}/{dt.day}',{row['ave_high']},{row['ave_low']}],") 
 
 
 
