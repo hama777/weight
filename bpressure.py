@@ -8,8 +8,8 @@ import datetime
 import subprocess
 from ftplib import FTP_TLS
 
-# 26/04/16 v0.02 血圧の高と低を同じグラフに追加
-version = "0.02" 
+# 26/04/17 v0.03 7日間移動平均処理追加
+version = "0.03" 
 debug = 0
 appdir = os.path.dirname(os.path.abspath(__file__))
 
@@ -72,6 +72,12 @@ def read_data() :
     df_pressure['pdate'] = pd.to_datetime(df_pressure['pdate'])
     df_pressure["ave_high"] = (df_pressure["m_high"] + df_pressure["e_high"]) / 2
     df_pressure["ave_low"]  = (df_pressure["m_low"]  + df_pressure["e_low"])  / 2
+    df_pressure['week_high'] = (
+    df_pressure.set_index('pdate')['ave_high']
+        .rolling(7)
+        .mean()
+        .reset_index(drop=True)
+    )
     print(df_pressure)
 
 def month3_graph() :
