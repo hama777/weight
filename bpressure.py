@@ -8,8 +8,8 @@ import datetime
 import subprocess
 from ftplib import FTP_TLS
 
-# 26/04/17 v0.03 7日間移動平均処理追加
-version = "0.03" 
+# 26/04/20 v0.04 移動平均グラフ追加
+version = "0.04" 
 debug = 0
 appdir = os.path.dirname(os.path.abspath(__file__))
 
@@ -73,10 +73,16 @@ def read_data() :
     df_pressure["ave_high"] = (df_pressure["m_high"] + df_pressure["e_high"]) / 2
     df_pressure["ave_low"]  = (df_pressure["m_low"]  + df_pressure["e_low"])  / 2
     df_pressure['week_high'] = (
-    df_pressure.set_index('pdate')['ave_high']
-        .rolling(7)
-        .mean()
-        .reset_index(drop=True)
+        df_pressure.set_index('pdate')['ave_high']
+            .rolling(7)
+            .mean()
+            .reset_index(drop=True)
+    )
+    df_pressure['week_low'] = (
+        df_pressure.set_index('pdate')['ave_low']
+            .rolling(7)
+            .mean()
+            .reset_index(drop=True)
     )
     print(df_pressure)
 
@@ -87,6 +93,12 @@ def month3_graph() :
 
         out.write(f"['{dt.month}/{dt.day}',{row['ave_high']},{row['ave_low']}],") 
 
+def week_ave_graph() :
+    df_qu = df_pressure.tail(90)
+    for index, row in df_qu.iterrows():
+        dt = row['pdate']
+
+        out.write(f"['{dt.month}/{dt.day}',{row['week_high']},{row['week_low']}],") 
 
 
 #  年、月ごとの統計量を求め df を作成する
@@ -495,6 +507,9 @@ def parse_template() :
     for line in f :
         if "%month3_graph" in line :
             month3_graph()
+            continue
+        if "%week_ave_graph" in line :
+            week_ave_graph()
             continue
         if "%lastdate%" in line :
             lastdate_datetime = df['wdate'].iloc[-1]
