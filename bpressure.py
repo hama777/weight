@@ -8,8 +8,8 @@ import datetime
 import subprocess
 from ftplib import FTP_TLS
 
-# 26/04/20 v0.04 移動平均グラフ追加
-version = "0.04" 
+# 26/04/27 v0.05 月別集計処理追加
+version = "0.05" 
 debug = 0
 appdir = os.path.dirname(os.path.abspath(__file__))
 
@@ -43,6 +43,7 @@ def main_proc():
     #calc_statistics()
     #create_month_ave_diff()
     #create_day_diff()
+    month_data()
     parse_template()
     if debug == 1 :
         return
@@ -84,7 +85,7 @@ def read_data() :
             .mean()
             .reset_index(drop=True)
     )
-    print(df_pressure)
+    #print(df_pressure)
 
 def month3_graph() :
     df_qu = df_pressure.tail(90)
@@ -99,6 +100,28 @@ def week_ave_graph() :
         dt = row['pdate']
 
         out.write(f"['{dt.month}/{dt.day}',{row['week_high']},{row['week_low']}],") 
+
+def month_data() :
+
+    # 月ごとに集計
+    df_mon = (
+        df_pressure
+        .assign(month=df_pressure['pdate'].dt.to_period('M'))
+        .groupby('month')
+        .agg({
+            'ave_high': ['mean', 'max', 'min', 'std'],
+            'ave_low':  ['mean', 'max', 'min', 'std']
+        })
+    )
+
+    # カラム名をフラットにする（任意）
+    df_mon.columns = ['_'.join(col) for col in df_mon.columns]
+
+    # 必要なら month を通常の datetime に戻す
+    df_mon = df_mon.reset_index()
+    df_mon['month'] = df_mon['month'].dt.to_timestamp()
+
+    print(df_mon)   
 
 
 #  年、月ごとの統計量を求め df を作成する
