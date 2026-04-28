@@ -1,5 +1,5 @@
 <html><head><title>Walk List</title>
-    <!-- 26/04/20 v0.04 移動平均グラフ追加 -->
+    <!-- 26/04/28 v0.06 月別集計処理テーブル追加 -->
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta http-equiv="Content-Style-Type" content="text/css">
     <link rel="stylesheet" href="weight.css">
@@ -65,5 +65,14 @@
     <h2>血圧グラフ移動平均(90日)</h2>
     <div id="week_ave_graph" style="width:1000px; height:400px;  margin-top:20px ; margin-left:  50px; " ></div>
     <br>
+    <h2>月別情報</h2>
+    <table>
+        <tr>
+            <th>年月</th><th>高平均</th><th>高最大</th><th>高最低</th><th>高SD</th>
+            <th>低平均</th><th>低最大</th><th>低最低</th><th>低SD</th>
+        </tr>
+        %month_info%
+    </table>
+
 </body>
 </html>
