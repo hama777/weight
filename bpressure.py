@@ -8,8 +8,8 @@ import datetime
 import subprocess
 from ftplib import FTP_TLS
 
-# 26/04/27 v0.05 月別集計処理追加
-version = "0.05" 
+# 26/04/28 v0.06 月別集計処理テーブル追加
+version = "0.06" 
 debug = 0
 appdir = os.path.dirname(os.path.abspath(__file__))
 
@@ -43,7 +43,6 @@ def main_proc():
     #calc_statistics()
     #create_month_ave_diff()
     #create_day_diff()
-    month_data()
     parse_template()
     if debug == 1 :
         return
@@ -101,7 +100,7 @@ def week_ave_graph() :
 
         out.write(f"['{dt.month}/{dt.day}',{row['week_high']},{row['week_low']}],") 
 
-def month_data() :
+def month_info() :
 
     # 月ごとに集計
     df_mon = (
@@ -120,6 +119,14 @@ def month_data() :
     # 必要なら month を通常の datetime に戻す
     df_mon = df_mon.reset_index()
     df_mon['month'] = df_mon['month'].dt.to_timestamp()
+
+    for index, row in df_mon.iterrows():
+        yymm = row['month'].strftime("%y/%m")
+        out.write(f"<tr><td>{yymm}</td><td align=right>{row['ave_high_mean']:7.1f}</td><td align=right>{row['ave_high_max']:7.0f}</td>"
+                  f"<td align=right>{row['ave_high_min']:7.0f}</td><td align=right>{row['ave_high_std']:7.1f}</td>"
+                  f"<td align=right>{row['ave_low_mean']:7.1f}</td><td align=right>{row['ave_low_max']:7.0f}</td>"
+                  f"<td align=right>{row['ave_low_min']:7.0f}</td><td align=right>{row['ave_low_std']:7.1f}</td>"
+                  f"</tr>\n")
 
     print(df_mon)   
 
@@ -533,6 +540,9 @@ def parse_template() :
             continue
         if "%week_ave_graph" in line :
             week_ave_graph()
+            continue
+        if "%month_info%" in line :
+            month_info()
             continue
         if "%lastdate%" in line :
             lastdate_datetime = df['wdate'].iloc[-1]
