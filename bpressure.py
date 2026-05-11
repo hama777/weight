@@ -8,8 +8,8 @@ import datetime
 import subprocess
 from ftplib import FTP_TLS
 
-# 26/04/28 v0.06 月別集計処理テーブル追加
-version = "0.06" 
+# 26/05/11 v0.07 一部データにNanがあった場合に動作しないのを修正
+version = "0.07" 
 debug = 0
 appdir = os.path.dirname(os.path.abspath(__file__))
 
@@ -68,10 +68,15 @@ def read_data() :
     global df_pressure
     df_pressure = pd.read_excel(datafile,sheet_name ='血圧',usecols=range(5),
                        header = 1, names=["pdate", "m_high","m_low","e_high","e_low",])  # 0,1 カラムのみ読み込み
-    df_pressure = df_pressure.dropna()
+    
+    #df_pressure = df_pressure.dropna()
+    df_pressure = df_pressure.dropna(
+        subset=["m_high", "m_low", "e_high", "e_low"],
+        how="all"
+    )
     df_pressure['pdate'] = pd.to_datetime(df_pressure['pdate'])
-    df_pressure["ave_high"] = (df_pressure["m_high"] + df_pressure["e_high"]) / 2
-    df_pressure["ave_low"]  = (df_pressure["m_low"]  + df_pressure["e_low"])  / 2
+    df_pressure["ave_high"] = df_pressure[["m_high", "e_high"]].mean(axis=1)
+    df_pressure["ave_low"]  = df_pressure[["m_low", "e_low"]].mean(axis=1)
     df_pressure['week_high'] = (
         df_pressure.set_index('pdate')['ave_high']
             .rolling(7)
@@ -84,7 +89,7 @@ def read_data() :
             .mean()
             .reset_index(drop=True)
     )
-    #print(df_pressure)
+    #print(df_pressure.tail(20))
 
 def month3_graph() :
     df_qu = df_pressure.tail(90)
@@ -97,7 +102,6 @@ def week_ave_graph() :
     df_qu = df_pressure.tail(90)
     for index, row in df_qu.iterrows():
         dt = row['pdate']
-
         out.write(f"['{dt.month}/{dt.day}',{row['week_high']},{row['week_low']}],") 
 
 def month_info() :
@@ -127,8 +131,6 @@ def month_info() :
                   f"<td align=right>{row['ave_low_mean']:7.1f}</td><td align=right>{row['ave_low_max']:7.0f}</td>"
                   f"<td align=right>{row['ave_low_min']:7.0f}</td><td align=right>{row['ave_low_std']:7.1f}</td>"
                   f"</tr>\n")
-
-    print(df_mon)   
 
 
 #  年、月ごとの統計量を求め df を作成する
