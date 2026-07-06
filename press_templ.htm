@@ -1,5 +1,5 @@
 <html><head><title>血圧集計</title>
-    <!-- 26/05/12 v1.00 移動平均を全データとした -->
+    <!-- 26/07/06 月別集計を先頭に表示 -->
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta http-equiv="Content-Style-Type" content="text/css">
     <link rel="stylesheet" href="weight.css">
@@ -59,12 +59,6 @@
     <span style="font-size:12px;">Ver : %version%</span>
     <span style="font-size:12px;">実行日時   : %today%</span>
 
-    <h2>血圧グラフ(90日)</h2>
-    <div id="month3_graph" style="width:1000px; height:400px;  margin-top:20px ; margin-left:  50px; " ></div>
-    <br>
-    <h2>血圧グラフ移動平均</h2>
-    <div id="week_ave_graph" style="width:1000px; height:400px;  margin-top:20px ; margin-left:  50px; " ></div>
-    <br>
     <h2>月別情報</h2>
     <table>
         <tr>
@@ -76,6 +70,13 @@
         </tr>
         %month_info%
     </table>
+    <br>
+    <h2>血圧グラフ(90日)</h2>
+    <div id="month3_graph" style="width:1000px; height:400px;  margin-top:20px ; margin-left:  50px; " ></div>
+    <br>
+    <h2>血圧グラフ移動平均</h2>
+    <div id="week_ave_graph" style="width:1000px; height:400px;  margin-top:20px ; margin-left:  50px; " ></div>
+    <br>
 
 </body>
 </html>
